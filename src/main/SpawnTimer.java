@@ -66,10 +66,6 @@ public class SpawnTimer {
         }
     }
 
-    public Integer getTime() {
-        return time;
-    }
-
     public void setTimerVisible() {
 
         isTimerVisible = !isTimerVisible;

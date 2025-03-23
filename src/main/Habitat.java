@@ -3,6 +3,7 @@ package main;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -10,6 +11,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -49,7 +51,7 @@ public class Habitat extends Application {
         panel.setStroke(Color.GOLD);
         panel.setStrokeWidth(6);
 
-        Label copyRight = new Label("CompChair©");
+        Label copyRight = new Label("CompChair and ebanat777©");
         copyRight.setTextFill(Color.rgb(230, 230, 230));
         copyRight.relocate(50, 680);
 
@@ -133,6 +135,7 @@ public class Habitat extends Application {
         mainRoot.getChildren().addAll(AntRoot, controls);
 
         MainMenu menu = new MainMenu(WIDTH, HEIGHT);
+
         menu.getDalee().setOnAction(e -> {
             if (menu.isInputTrue()) {
                 if (!menu.getN1().getText().isEmpty())
