@@ -4,8 +4,9 @@ import javafx.scene.control.Button;
 
 public class SpawnControls {
 
-    private Button startBtn = new Button("старт");
-    private Button stopBtn = new Button("стоп");
+    private final Button startBtn = new Button("старт");
+    private final Button stopBtn = new Button("стоп");
+    private final Button exit = new Button("Выход");
 
     public SpawnControls(int X, int Y) {
         startBtn.relocate(X, Y);
@@ -14,6 +15,9 @@ public class SpawnControls {
         stopBtn.relocate(X + 147, Y);
         stopBtn.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 24px; -fx-font-weight: bold;");
         stopBtn.setDisable(true);
+
+        exit.relocate(60, 640);
+        exit.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
     }
 
     public Button getStartBtn() {
@@ -23,4 +27,6 @@ public class SpawnControls {
     public Button getStopBtn() {
         return stopBtn;
     }
+
+    public Button getExit() { return exit; }
 }

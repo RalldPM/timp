@@ -10,19 +10,28 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.Vector;
 
 public class Info {
 
-    private Text time = new Text();
-    private Stage modalStage = new Stage();
-    private Text infoText = new Text();
-    private CheckBox toggleInfo = new CheckBox("Показывать статистику");
+    private final Text time = new Text();
+    private final Stage modalStage = new Stage();
+    private final Text infoText = new Text();
 
-    private Button closeButton = new Button("OK");
-    private Button continueButton = new Button("Отмена");
+    private final Stage infoAntsStage = new Stage();
+    private final Pane infoAntsPane = new Pane();
+
+    private final CheckBox toggleInfo = new CheckBox("Показывать статистику");
+    private final Button realTimeInfoBtn = new Button("Информация");
+
+    private final Button closeButton = new Button("OK");
+    private final Button continueButton = new Button("Отмена");
 
     public Info(int X, int Y, Stage stage) {
 
+        // окно с количеством муравьев и таймером
         modalStage.initModality(Modality.APPLICATION_MODAL);
         modalStage.setTitle("Статистика");
         modalStage.setResizable(false);
@@ -36,10 +45,21 @@ public class Info {
         modalStage.setScene(new Scene(layout, 300, 200));
 
         modalStage.initOwner(stage);
-
         infoText.relocate(122, 70);
+
+        // окно про каждого из муавьёв
+        infoAntsStage.initModality(Modality.APPLICATION_MODAL);
+        infoAntsStage.setTitle("Информация о муравьях");
+        infoAntsStage.setResizable(false);
+        infoAntsStage.setScene(new Scene(infoAntsPane, 300, 700));
+        infoAntsStage.initOwner(stage);
+
+        // кнопки в панели управления
         toggleInfo.relocate(X, Y);
         toggleInfo.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
+        realTimeInfoBtn.relocate(X, Y + 100);
+        realTimeInfoBtn.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
+        realTimeInfoBtn.setDisable(true);
     }
 
     public void printInfo(List<AbstractAnt> ants, String timer) {
@@ -62,9 +82,31 @@ public class Info {
         return toggleInfo;
     }
 
-    public void showStats(ArrayList<AbstractAnt> ants, String timer) {
+    public void showStats(Vector<AbstractAnt> ants, String timer) {
         printInfo(ants, timer);
         modalStage.showAndWait();
+    }
+
+    public void showAntsInfo(TreeMap<Integer, Integer> ants) {
+        infoAntsPane.getChildren().clear();
+        int posY = 30;
+        for (Map.Entry<Integer, Integer> entry : ants.entrySet()) {
+            String prof;
+            int lifeTime;
+            if (entry.getKey() / 10000 == 1) {
+                prof = "Рабочий муравей";
+                lifeTime = WorkerAnt.getLifeTime();
+            }
+            else {
+                prof = "Военный муравей";
+                lifeTime = WarriorAnt.getLifeTime();
+            }
+            Text infoAboutAnt = new Text(entry.getKey() + "\t" + prof + "\t" + entry.getValue() / 100 + "\t" + (entry.getValue() / 100 + lifeTime));
+            infoAboutAnt.relocate(30, posY);
+            infoAntsPane.getChildren().add(infoAboutAnt);
+            posY += 20;
+        }
+        infoAntsStage.showAndWait();
     }
 
     public Button getContinueButton() {
@@ -73,6 +115,14 @@ public class Info {
 
     public Button getCloseButton() {
         return closeButton;
+    }
+
+    public Button getInfoBtn() {
+        return realTimeInfoBtn;
+    }
+
+    public Stage getAntsStage() {
+        return infoAntsStage;
     }
 
     public void close() {

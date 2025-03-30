@@ -13,38 +13,48 @@ import javafx.scene.text.Text;
 
 public class MainMenu {
 
-    private TextField textFieldN1 = new TextField();
-    private TextField textFieldN2 = new TextField();
-    private ComboBox<String> boxP1 = new ComboBox<>(FXCollections.observableArrayList("10%","20%","30%","40%","50%","60%","70%","80%","90%","100%"));
-    private ComboBox<String> boxP2 = new ComboBox<>(FXCollections.observableArrayList("10%","20%","30%","40%","50%","60%","70%","80%","90%","100%"));
+    private final TextField textFieldN1 = new TextField();
+    private final TextField textFieldN2 = new TextField();
+    private final TextField textFieldLifeTimeWork = new TextField();
+    private final TextField textFieldLifeTimeWar = new TextField();
+    private final ComboBox<String> boxP1 = new ComboBox<>(FXCollections.observableArrayList("10%","20%","30%","40%","50%","60%","70%","80%","90%","100%"));
+    private final ComboBox<String> boxP2 = new ComboBox<>(FXCollections.observableArrayList("10%","20%","30%","40%","50%","60%","70%","80%","90%","100%"));
 
-    private Text textN1 = new Text("Время появления рабочих");
-    private Text textN2 = new Text("Время появления военных");
-    private Text textP1 = new Text("Верояность появления рабочих");
-    private Text textP2 = new Text("Вероятность появления военных");
+    private final Text textN1 = new Text("Время появления рабочих");
+    private final Text textN2 = new Text("Время появления военных");
+    private final Text textLifeTimeWork = new Text("Время жизни рабочих");
+    private final Text textLifeTimeWar= new Text("Время жизни рабочих");
+    private final Text textP1 = new Text("Верояность появления рабочих");
+    private final Text textP2 = new Text("Вероятность появления военных");
 
-    private Button dalee = new Button("Далее");
+    private final Button dalee = new Button("Далее");
 
-    private Pane menuRoot = new Pane(textFieldN1, textFieldN2, boxP1, boxP2,
-            textN1, textN2, textP1, textP2, dalee);
+    private final Pane menuRoot = new Pane(textFieldN1, textFieldN2,textFieldLifeTimeWar, textFieldLifeTimeWork,
+            boxP1, boxP2, textN1, textN2, textP1,textLifeTimeWar, textLifeTimeWork, textP2, dalee);
 
-    private Scene menu;
+    private final Scene menu;
 
     public MainMenu(int W, int H) {
-        textFieldN1.setTooltip(new Tooltip("Время появления рабочих"));
-        textFieldN2.setTooltip(new Tooltip("Время появления военных"));
-        boxP1.setTooltip(new Tooltip("Верояность появления рабочих"));
-        boxP2.setTooltip(new Tooltip("Вероятность появления военных"));
+        textFieldN1.setTooltip(new Tooltip("По умолчанию 1 секунда"));
+        textFieldN2.setTooltip(new Tooltip("По умолчанию 1 секунда"));
+        textFieldLifeTimeWar.setTooltip(new Tooltip("По умолчанию 10 секунд"));
+        textFieldLifeTimeWork.setTooltip(new Tooltip("По умолчанию 10 секунд"));
+        boxP1.setTooltip(new Tooltip("По умолчанию 100%"));
+        boxP2.setTooltip(new Tooltip("По умолчанию 100%"));
 
         textFieldN1.relocate(100, 100);
         textFieldN2.relocate(100, 300);
-        boxP1.relocate(300, 100);
-        boxP2.relocate(300, 300);
+        textFieldLifeTimeWork.relocate(300, 100);
+        textFieldLifeTimeWar.relocate(300, 300);
+        boxP1.relocate(500, 100);
+        boxP2.relocate(500, 300);
 
         textN1.relocate(100, 80);
-        textN2.relocate(300, 80);
-        textP1.relocate(100, 280);
-        textP2.relocate(300, 280);
+        textN2.relocate(100, 280);
+        textLifeTimeWar.relocate(300, 80);
+        textLifeTimeWork.relocate(300, 280);
+        textP1.relocate(500, 80);
+        textP2.relocate(500, 280);
 
         dalee.relocate(200, 400);
 
@@ -63,6 +73,14 @@ public class MainMenu {
         return textFieldN1;
     }
 
+    public TextField getLifeTimeWar() {
+        return textFieldLifeTimeWar;
+    }
+
+    public TextField getLifeTimeWork() {
+        return textFieldLifeTimeWork;
+    }
+
     public ComboBox<String> getP2() {
         return boxP2;
     }
@@ -77,7 +95,9 @@ public class MainMenu {
 
     public boolean isInputTrue() {
         return textFieldN1.getText().chars().allMatch(Character::isDigit) &
-                textFieldN2.getText().chars().allMatch(Character::isDigit);
+                textFieldN2.getText().chars().allMatch(Character::isDigit) &
+                textFieldLifeTimeWar.getText().chars().allMatch(Character::isDigit) &
+                textFieldLifeTimeWork.getText().chars().allMatch(Character::isDigit);
     }
 
     public void showError() {

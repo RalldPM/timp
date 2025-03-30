@@ -13,7 +13,7 @@ public class SpawnTimer {
     private Button timerButton = new Button();
     private ScheduledFuture<?> timer;
     private Text timerText = new Text();
-    private Integer time = 0;
+    private int time = 0;
     private boolean isTimerVisible = false;
 
     public SpawnTimer(int X, int Y) {
@@ -35,6 +35,8 @@ public class SpawnTimer {
     }
 
     public Button getTimerButton() {return timerButton;}
+
+    public int getTime() {return time;}
 
     public void continueTimer(ScheduledExecutorService executor) {
         timer = executor.scheduleAtFixedRate(() -> Platform.runLater(() -> {
