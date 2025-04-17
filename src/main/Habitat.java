@@ -10,8 +10,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
 
+import java.util.Iterator;
 import java.util.Random;
-import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -34,18 +34,30 @@ public class Habitat extends Application {
 
     private final Pane antRoot = new Pane();
 
-    private final AntCollection ants = new AntCollection();
+    private volatile boolean movingWar = false;
+    private volatile boolean movingWork = false;
+    private final Object lockWar = new Object();
+    private final Object lockWork = new Object();
+
+    private static volatile Habitat instance;
 
     public void start(Stage stage) {
+
+        Thread warAI = new Thread(new WarriorAI(lockWar, () -> movingWar));
+        Thread workAI = new Thread(new WorkerAI(lockWork, () -> movingWork));
+        warAI.setDaemon(true);
+        workAI.setDaemon(true);
+        warAI.start();
+        workAI.start();
 
         Pane mainRoot = new Pane();
         Pane controls = new Pane();
         mainRoot.getChildren().addAll(antRoot, controls);
 
-        MainMenu menu = new MainMenu(WIDTH, HEIGHT);
+        MainMenu menu = MainMenu.getInstance();
         Scene scene = new Scene(mainRoot, WIDTH, HEIGHT);
 
-        executor = Executors.newScheduledThreadPool(3);
+        executor = Executors.newScheduledThreadPool(4);
 
         Shape panel = new Rectangle(3, 3, 300, HEIGHT - 6);
         panel.setFill(Color.WHITE);
@@ -56,19 +68,78 @@ public class Habitat extends Application {
         copyRight.setTextFill(Color.rgb(230, 230, 230));
         copyRight.relocate(40, 690);
 
-        SpawnControls spawnControls = new SpawnControls(40, 140);
-        SpawnTimer st = new SpawnTimer(110, 40);
-        Info info = new Info(40, 200, stage);
+        SpawnControls spawnControls = SpawnControls.getInstance();
+        SpawnTimer st = SpawnTimer.getInstance();
+        AIControls aiControls =  AIControls.getInstance();
+        Info info = Info.getInstance();
+        info.setOwnerStage(stage);
+
+        aiControls.getWarComboBox().setOnAction(e -> {
+            warAI.setPriority(aiControls.getWarComboBox().getValue());
+        });
+
+        aiControls.getWorkComboBox().setOnAction(e -> {
+            workAI.setPriority(aiControls.getWorkComboBox().getValue());
+        });
+
+        aiControls.getWarR().setOnAction(e -> {
+            if (!aiControls.getWarR().getText().isEmpty())
+                WarriorAnt.setR(Integer.parseInt(aiControls.getWarR().getText()));
+        });
+
+        aiControls.getWarV().setOnAction(e -> {
+            if (!aiControls.getWarV().getText().isEmpty())
+                WarriorAnt.setV(Integer.parseInt(aiControls.getWarV().getText()));
+        });
+
+        aiControls.getWorkV().setOnAction(e -> {
+            if (!aiControls.getWorkV().getText().isEmpty())
+                WorkerAnt.setV(Integer.parseInt(aiControls.getWorkV().getText()));
+        });
+
+        aiControls.getWarAIBox().setOnAction(e -> {
+            synchronized (lockWar) {
+                movingWar = !movingWar;
+                if (movingWar) {
+                    lockWar.notify();
+                }
+            }
+        });
+
+        aiControls.getWorkAIBox().setOnAction(e -> {
+            synchronized (lockWork) {
+                movingWork = !movingWork;
+                if (movingWork) {
+                    lockWork.notify();
+                }
+            }
+        });
 
         spawnControls.getStartBtn().setOnAction(event -> {
+            synchronized (lockWar) {
+                if (aiControls.getWarAIBox().isSelected()) {
+                    lockWar.notify();
+                    movingWar = true;
+                }
+            }
+            synchronized (lockWork) {
+                if (aiControls.getWorkAIBox().isSelected()) {
+                    lockWork.notify();
+                    movingWork = true;
+                }
+            }
+
             spawnControls.getStartBtn().setDisable(true);
             spawnControls.getStopBtn().setDisable(false);
             info.getInfoBtn().setDisable(false);
-            ants.antVector().clear();
-            ants.antSet().clear();
-            ants.antMap().clear();
+
+            AntCollection.ants().antVector().clear();
+            AntCollection.ants().antSet().clear();
+            AntCollection.ants().antMap().clear();
             antRoot.getChildren().clear();
+
             st.start(executor);
+
             startSpawn(st);
             killAnts(st);
         });
@@ -76,20 +147,27 @@ public class Habitat extends Application {
         spawnControls.getStopBtn().setOnAction(event -> {
             st.stop();
             stopSpawn();
+
             spawnControls.getStartBtn().setDisable(false);
             spawnControls.getStopBtn().setDisable(true);
             info.getInfoBtn().setDisable(true);
+
+            movingWar = movingWork = false;
+
             if (info.getToggleInfo().isSelected()) {
-                info.showStats(ants.antVector(), st.getTimerText().getText());
+                info.showStats(AntCollection.ants().antVector(), st.getTimerText().getText());
             }
         });
 
         spawnControls.getExit().setOnAction(e -> {
-            stage.setScene(menu.getScene());
-            st.stop();
-            stopSpawn();
             spawnControls.getStartBtn().setDisable(false);
             spawnControls.getStopBtn().setDisable(true);
+
+            stage.setScene(menu.getScene());
+
+            st.stop();
+            stopSpawn();
+
             info.getInfoBtn().setDisable(true);
         });
 
@@ -99,13 +177,29 @@ public class Habitat extends Application {
             switch(event.getCode()) {
                 case B -> {
                     if (!spawnControls.getStartBtn().isDisabled()) {
+                        synchronized (lockWar) {
+                            if (aiControls.getWarAIBox().isSelected()) {
+                                lockWar.notify();
+                                movingWar = true;
+                            }
+                        }
+                        synchronized (lockWork) {
+                            if (aiControls.getWorkAIBox().isSelected()) {
+                                lockWork.notify();
+                                movingWork = true;
+                            }
+                        }
+
                         spawnControls.getStartBtn().setDisable(true);
                         spawnControls.getStopBtn().setDisable(false);
+
                         info.getInfoBtn().setDisable(false);
-                        ants.antVector().clear();
-                        ants.antSet().clear();
-                        ants.antMap().clear();
+
+                        AntCollection.ants().antVector().clear();
+                        AntCollection.ants().antSet().clear();
+                        AntCollection.ants().antMap().clear();
                         antRoot.getChildren().clear();
+
                         st.start(executor);
                         startSpawn(st);
                         killAnts(st);
@@ -113,13 +207,17 @@ public class Habitat extends Application {
                 }
                 case E -> {
                     if (!spawnControls.getStopBtn().isDisabled()) {
-                        st.stop();
-                        stopSpawn();
                         spawnControls.getStartBtn().setDisable(false);
                         spawnControls.getStopBtn().setDisable(true);
+
+                        st.stop();
+                        stopSpawn();
+
+                        movingWar = movingWork = false;
+
                         info.getInfoBtn().setDisable(true);
                         if (info.getToggleInfo().isSelected()) {
-                            info.showStats(ants.antVector(), st.getTimerText().getText());
+                            info.showStats(AntCollection.ants().antVector(), st.getTimerText().getText());
                         }
                     }
                 }
@@ -133,22 +231,53 @@ public class Habitat extends Application {
         });
 
         info.getContinueButton().setOnAction(e -> {
+            synchronized (lockWar) {
+                if (aiControls.getWarAIBox().isSelected()) {
+                    lockWar.notify();
+                    movingWar = true;
+                }
+            }
+            synchronized (lockWork) {
+                if (aiControls.getWorkAIBox().isSelected()) {
+                    lockWork.notify();
+                    movingWork = true;
+                }
+            }
+
+            spawnControls.getStartBtn().setDisable(true);
+            spawnControls.getStopBtn().setDisable(false);
+
             info.close();
+            info.getInfoBtn().setDisable(false);
+
             startSpawn(st);
             killAnts(st);
             st.continueTimer(executor);
-            spawnControls.getStartBtn().setDisable(true);
-            spawnControls.getStopBtn().setDisable(false);
-            info.getInfoBtn().setDisable(false);
         });
 
         info.getInfoBtn().setOnAction(e -> {
+            movingWar = movingWork = false;
+
             st.stop();
             stopSpawn();
-            info.showAntsInfo(ants.antMap());
+
+            info.showAntsInfo(AntCollection.ants().antMap());
         });
 
         info.getAntsStage().setOnCloseRequest(e -> {
+            synchronized (lockWar) {
+                if (aiControls.getWarAIBox().isSelected()) {
+                    lockWar.notify();
+                    movingWar = true;
+                }
+            }
+            synchronized (lockWork) {
+                if (aiControls.getWorkAIBox().isSelected()) {
+                    lockWork.notify();
+                    movingWork = true;
+                }
+            }
+
             startSpawn(st);
             st.continueTimer(executor);
             killAnts(st);
@@ -163,7 +292,11 @@ public class Habitat extends Application {
                 spawnControls.getExit(),
                 info.getToggleInfo(),
                 info.getInfoBtn(),
-                copyRight);
+                copyRight,
+                aiControls.getWarAIBox(), aiControls.getWorkAIBox(),
+                aiControls.getWarR(),aiControls.getWarV(),aiControls.getWorkV(),
+                aiControls.getWarRText(), aiControls.getWarVText(), aiControls.getWorkVText(),
+                aiControls.getWarComboBox(), aiControls.getWorkComboBox());
 
         menu.getDalee().setOnAction(e -> {
             if (menu.isInputTrue()) {
@@ -201,11 +334,11 @@ public class Habitat extends Application {
             if (random.nextInt(0, 101) < P1) {
                 AbstractAnt newAnt = new WorkerAnt(
                         random.nextInt(312, WIDTH - 50),
-                        random.nextInt(10, HEIGHT), st, getUniqueID("Worker"));
-                ants.antVector().add(newAnt);
-                ants.antSet().add(newAnt.getId());
-                ants.antMap().put(newAnt.getId(), newAnt.getBornMoment());
-                Platform.runLater(() -> antRoot.getChildren().add(newAnt.getProfession()));
+                        random.nextInt(10, HEIGHT), st, getUniqueID(Professions.WORKER));
+                AntCollection.ants().antVector().add(newAnt);
+                AntCollection.ants().antSet().add(newAnt.getId());
+                AntCollection.ants().antMap().put(newAnt.getId(), newAnt.getBornMoment());
+                Platform.runLater(() -> antRoot.getChildren().add(newAnt.getVisualObject()));
             }
         }, N1, N1, TimeUnit.SECONDS);
 
@@ -213,29 +346,29 @@ public class Habitat extends Application {
             if (random.nextInt(0, 101) < P2) {
                 AbstractAnt newAnt = new WarriorAnt(
                         random.nextInt(312, WIDTH - 50),
-                        random.nextInt(10, HEIGHT), st, getUniqueID("Warrior"));
-                ants.antVector().add(newAnt);
-                ants.antSet().add(newAnt.getId());
-                ants.antMap().put(newAnt.getId(), newAnt.getBornMoment());
-                Platform.runLater(() -> antRoot.getChildren().add(newAnt.getProfession()));
+                        random.nextInt(10, HEIGHT), st, getUniqueID(Professions.WARRIOR));
+                AntCollection.ants().antVector().add(newAnt);
+                AntCollection.ants().antSet().add(newAnt.getId());
+                AntCollection.ants().antMap().put(newAnt.getId(), newAnt.getBornMoment());
+                Platform.runLater(() -> antRoot.getChildren().add(newAnt.getVisualObject()));
             }
         }, N1, N2, TimeUnit.SECONDS);
     }
 
-    private int getUniqueID(String type) {
+    private int getUniqueID(Professions prof) {
         Random random = new Random();
         int id = random.nextInt(10000);
-        while (ants.antSet().contains(id))
+        while (AntCollection.ants().antSet().contains(id))
             id = random.nextInt(10000);
-        if (type.equals("Worker"))
+        if (prof == Professions.WORKER)
             return id + 10000;
         return id + 20000;
     }
 
     private void killAnts(SpawnTimer st) {
         despawn = executor.scheduleAtFixedRate(() -> {
-            Vector<AbstractAnt> deadAnts = new Vector<>();
-            for (AbstractAnt ant : ants.antVector()) {
+            for (Iterator<AbstractAnt> it = AntCollection.ants().antVector().iterator(); it.hasNext();) {
+                AbstractAnt ant = it.next();
                 int lifeTime;
                 if (ant instanceof WarriorAnt)
                     lifeTime = WarriorAnt.getLifeTime();
@@ -243,14 +376,13 @@ public class Habitat extends Application {
                     lifeTime = WorkerAnt.getLifeTime();
                 if (st.getTime() - ant.getBornMoment() >= lifeTime * 100) {
                     Platform.runLater(() -> {
-                        antRoot.getChildren().remove(ant.getProfession());
+                        antRoot.getChildren().remove(ant.getVisualObject());
                     });
-                    deadAnts.add(ant);
-                    ants.antSet().remove(ant.getId());
-                    ants.antMap().remove(ant.getId());
+                    AntCollection.ants().antSet().remove(ant.getId());
+                    AntCollection.ants().antMap().remove(ant.getId());
+                    it.remove();
                 }
             }
-            ants.antVector().removeAll(deadAnts);
         }, 0, 1, TimeUnit.MILLISECONDS);
     }
 
@@ -277,5 +409,34 @@ public class Habitat extends Application {
 
     public static void main(String[] args) {
         launch();
+    }
+
+    public boolean isMovingWork() {
+        return movingWork;
+    }
+
+    public boolean isMovingWar() {
+        return movingWar;
+    }
+
+    public int getHEIGHT() {
+        return HEIGHT;
+    }
+
+    public int getWIDTH() {
+        return WIDTH;
+    }
+
+    public static Habitat getInstance() {
+        Habitat localInstance = instance;
+        if (localInstance == null) {
+            synchronized (Habitat.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new Habitat();
+                }
+            }
+        }
+        return localInstance;
     }
 }

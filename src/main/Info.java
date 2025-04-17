@@ -8,7 +8,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,7 +28,9 @@ public class Info {
     private final Button closeButton = new Button("OK");
     private final Button continueButton = new Button("Отмена");
 
-    public Info(int X, int Y, Stage stage) {
+    private static volatile Info instance;
+
+    private Info(int X, int Y) {
 
         // окно с количеством муравьев и таймером
         modalStage.initModality(Modality.APPLICATION_MODAL);
@@ -44,7 +45,6 @@ public class Info {
         Pane layout = new Pane(time, infoText, closeButton, continueButton);
         modalStage.setScene(new Scene(layout, 300, 200));
 
-        modalStage.initOwner(stage);
         infoText.relocate(122, 70);
 
         // окно про каждого из муавьёв
@@ -52,7 +52,6 @@ public class Info {
         infoAntsStage.setTitle("Информация о муравьях");
         infoAntsStage.setResizable(false);
         infoAntsStage.setScene(new Scene(infoAntsPane, 300, 700));
-        infoAntsStage.initOwner(stage);
 
         // кнопки в панели управления
         toggleInfo.relocate(X, Y);
@@ -60,6 +59,11 @@ public class Info {
         realTimeInfoBtn.relocate(X, Y + 100);
         realTimeInfoBtn.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
         realTimeInfoBtn.setDisable(true);
+    }
+
+    public void setOwnerStage(Stage stage) {
+        infoAntsStage.initOwner(stage);
+        modalStage.initOwner(stage);
     }
 
     public void printInfo(List<AbstractAnt> ants, String timer) {
@@ -127,5 +131,18 @@ public class Info {
 
     public void close() {
         modalStage.close();
+    }
+
+    public static Info getInstance() {
+        Info localInstance = instance;
+        if (localInstance == null) {
+            synchronized (Info.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new Info(40, 200);
+                }
+            }
+        }
+        return localInstance;
     }
 }

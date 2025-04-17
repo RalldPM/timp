@@ -10,13 +10,14 @@ import java.util.concurrent.TimeUnit;
 
 public class SpawnTimer {
 
-    private Button timerButton = new Button();
+    private final Button timerButton = new Button();
     private ScheduledFuture<?> timer;
-    private Text timerText = new Text();
+    private final Text timerText = new Text();
     private int time = 0;
     private boolean isTimerVisible = false;
+    private static volatile SpawnTimer instance;
 
-    public SpawnTimer(int X, int Y) {
+    private SpawnTimer(int X, int Y) {
 
         timerText.relocate(X,Y);
         timerText.setVisible(false);
@@ -77,5 +78,18 @@ public class SpawnTimer {
             timerButton.setText("Скрыть таймер");
         else
             timerButton.setText("Показать таймер");
+    }
+
+    public static SpawnTimer getInstance() {
+        SpawnTimer localInstance = instance;
+        if (localInstance == null) {
+            synchronized (SpawnTimer.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new SpawnTimer(110, 40);
+                }
+            }
+        }
+        return localInstance;
     }
 }

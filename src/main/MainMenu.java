@@ -33,8 +33,9 @@ public class MainMenu {
             boxP1, boxP2, textN1, textN2, textP1,textLifeTimeWar, textLifeTimeWork, textP2, dalee);
 
     private final Scene menu;
+    private static volatile MainMenu instance;
 
-    public MainMenu(int W, int H) {
+    private MainMenu(int W, int H) {
         textFieldN1.setTooltip(new Tooltip("По умолчанию 1 секунда"));
         textFieldN2.setTooltip(new Tooltip("По умолчанию 1 секунда"));
         textFieldLifeTimeWar.setTooltip(new Tooltip("По умолчанию 10 секунд"));
@@ -105,5 +106,20 @@ public class MainMenu {
         error.relocate(100, 500);
         error.setTextFill(Color.rgb(255,0,0));
         menuRoot.getChildren().add(error);
+    }
+
+    public static MainMenu getInstance() {
+        MainMenu localInstance = instance;
+        if (localInstance == null) {
+            synchronized (MainMenu.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new MainMenu(
+                            Habitat.getInstance().getWIDTH(),
+                            Habitat.getInstance().getHEIGHT());
+                }
+            }
+        }
+        return localInstance;
     }
 }

@@ -7,8 +7,9 @@ public class SpawnControls {
     private final Button startBtn = new Button("старт");
     private final Button stopBtn = new Button("стоп");
     private final Button exit = new Button("Выход");
+    private static volatile SpawnControls instance;
 
-    public SpawnControls(int X, int Y) {
+    private SpawnControls(int X, int Y) {
         startBtn.relocate(X, Y);
         startBtn.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 24px; -fx-font-weight: bold;");
 
@@ -29,4 +30,17 @@ public class SpawnControls {
     }
 
     public Button getExit() { return exit; }
+
+    public static SpawnControls getInstance() {
+        SpawnControls localInstance = instance;
+        if (localInstance == null) {
+            synchronized (SpawnControls.class) {
+                localInstance = instance;
+                if (localInstance == null) {
+                    instance = localInstance = new SpawnControls(40, 140);
+                }
+            }
+        }
+        return localInstance;
+    }
 }
