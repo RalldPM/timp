@@ -34,4 +34,8 @@ public abstract class AbstractAnt implements IBehaviour {
     public int getBornMoment() {
         return bornMoment;
     }
+
+    public void setBornMoment(int bornMoment) {
+        this.bornMoment = bornMoment;
+    }
 }

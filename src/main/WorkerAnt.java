@@ -5,7 +5,7 @@ import javafx.application.Platform;
 public class WorkerAnt extends AbstractAnt {
 
     private static int lifeTime = 10;
-    private static double V = 1;
+    private static double V;
     private final double bornX;
     private final double gX, gY, S;
     private boolean isGoInCorner;
@@ -29,6 +29,10 @@ public class WorkerAnt extends AbstractAnt {
 
     public static void setV(double v) {
         V = v;
+    }
+
+    public static double getV() {
+        return V;
     }
 
     @Override

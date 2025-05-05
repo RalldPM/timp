@@ -17,7 +17,7 @@ public class SpawnControls {
         stopBtn.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 24px; -fx-font-weight: bold;");
         stopBtn.setDisable(true);
 
-        exit.relocate(60, 640);
+        exit.relocate(215, 680);
         exit.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
     }
 

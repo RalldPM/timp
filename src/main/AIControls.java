@@ -22,14 +22,14 @@ public class AIControls {
     private final ComboBox<Integer> warComboBox = new ComboBox<>(FXCollections.observableArrayList(1,2,3,4,5,6,7,8,9,10));
     private final ComboBox<Integer> workComboBox = new ComboBox<>(FXCollections.observableArrayList(1,2,3,4,5,6,7,8,9,10));
 
-    private static AIControls instance;
+    private static volatile AIControls instance;
 
     private AIControls() {
         workAIBox.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
-        workAIBox.relocate(40, 225);
+        workAIBox.relocate(40, 230);
 
         warAIBox.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
-        warAIBox.relocate(40, 250);
+        warAIBox.relocate(40, 260);
 
         warR.relocate(60, 360);
         warR.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
@@ -59,9 +59,32 @@ public class AIControls {
         warComboBox.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
         warComboBox.setValue(5);
 
-        workComboBox.relocate(40, 560);
+        workComboBox.relocate(200, 500);
         workComboBox.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 18px; -fx-font-weight: bold;");
         workComboBox.setValue(5);
+
+        warR.setOnAction(e -> {
+            if (!warR.getText().isEmpty() &
+                    warR.getText().chars().allMatch(Character::isDigit))
+                if (Integer.parseInt(warR.getText()) >= 0)
+                    WarriorAnt.setR(Integer.parseInt(warR.getText()));
+        });
+
+        warV.setOnAction(e -> {
+            if (!warV.getText().isEmpty() &
+                    warV.getText().chars().allMatch(Character::isDigit))
+                if (Integer.parseInt(warV.getText()) >= 0)
+                    WarriorAnt.setV(Integer.parseInt(warV.getText()));
+        });
+
+        workV.setOnAction(e -> {
+            if (!workV.getText().isEmpty() &
+                    workV.getText().chars().allMatch(Character::isDigit))
+                if (Integer.parseInt(workV.getText()) >= 0)
+                    WorkerAnt.setV(Integer.parseInt(workV.getText()));
+        });
+
+
     }
 
     public CheckBox getWorkAIBox() {

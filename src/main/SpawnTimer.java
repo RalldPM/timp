@@ -4,7 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.control.Button;
 import javafx.scene.text.Text;
 
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -39,8 +39,8 @@ public class SpawnTimer {
 
     public int getTime() {return time;}
 
-    public void continueTimer(ScheduledExecutorService executor) {
-        timer = executor.scheduleAtFixedRate(() -> Platform.runLater(() -> {
+    public void continueTimer() {
+        timer = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> Platform.runLater(() -> {
 
             if (time/100%60 < 10 & time%100 < 10)
                 timerText.setText("0" + time/6000 + ":0" + time/100%60 + ":0" + time%100);
@@ -54,11 +54,11 @@ public class SpawnTimer {
         }), 0, 10, TimeUnit.MILLISECONDS);
     }
 
-    public void start(ScheduledExecutorService executor) {
+    public void start() {
 
         timerText.setText("00:00:00");
         time = 0;
-        continueTimer(executor);
+        continueTimer();
     }
 
     public void stop() {

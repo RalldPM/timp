@@ -36,13 +36,6 @@ public class MainMenu {
     private static volatile MainMenu instance;
 
     private MainMenu(int W, int H) {
-        textFieldN1.setTooltip(new Tooltip("По умолчанию 1 секунда"));
-        textFieldN2.setTooltip(new Tooltip("По умолчанию 1 секунда"));
-        textFieldLifeTimeWar.setTooltip(new Tooltip("По умолчанию 10 секунд"));
-        textFieldLifeTimeWork.setTooltip(new Tooltip("По умолчанию 10 секунд"));
-        boxP1.setTooltip(new Tooltip("По умолчанию 100%"));
-        boxP2.setTooltip(new Tooltip("По умолчанию 100%"));
-
         textFieldN1.relocate(100, 100);
         textFieldN2.relocate(100, 300);
         textFieldLifeTimeWork.relocate(300, 100);
