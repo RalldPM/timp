@@ -48,8 +48,8 @@ public class WarriorAnt extends AbstractAnt {
             double x = R * Math.sin(fi);
             double y = Math.sqrt(h * h - x * x);
             Platform.runLater(() -> {
-                visualObject.setCenterX(rotX + x);
-                visualObject.setCenterY(rotY + y);
+                getVisualObject().setCenterX(rotX + x);
+                getVisualObject().setCenterY(rotY + y);
             });
         }
     }

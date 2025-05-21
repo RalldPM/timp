@@ -5,7 +5,7 @@ import javafx.scene.shape.Circle;
 
 public abstract class AbstractAnt implements IBehaviour {
 
-    protected final Circle visualObject = new Circle();
+    private final Circle visualObject = new Circle();
     private int bornMoment;
     private int id;
 

@@ -40,21 +40,21 @@ public class WorkerAnt extends AbstractAnt {
         double x = V * gX / S;
         double y = V * gY / S;
 
-        if (visualObject.getCenterX() > 1080) {
+        if (getVisualObject().getCenterX() > 1080) {
             isGoInCorner = false;
         }
-        if (visualObject.getCenterX() < bornX) {
+        if (getVisualObject().getCenterX() < bornX) {
             isGoInCorner = true;
         }
 
         Platform.runLater(() -> {
             if (isGoInCorner) {
-                visualObject.setCenterX(visualObject.getCenterX() + x);
-                visualObject.setCenterY(visualObject.getCenterY() + y);
+                getVisualObject().setCenterX(getVisualObject().getCenterX() + x);
+                getVisualObject().setCenterY(getVisualObject().getCenterY() + y);
             }
             else {
-                visualObject.setCenterX(visualObject.getCenterX() - x);
-                visualObject.setCenterY(visualObject.getCenterY() - y);
+                getVisualObject().setCenterX(getVisualObject().getCenterX() - x);
+                getVisualObject().setCenterY(getVisualObject().getCenterY() - y);
             }
         });
     }

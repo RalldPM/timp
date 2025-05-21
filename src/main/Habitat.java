@@ -2,8 +2,13 @@ package main;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -15,6 +20,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PipedInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Vector;
@@ -76,7 +83,7 @@ public class Habitat extends Application {
 
         SpawnControls spawnControls = SpawnControls.getInstance();
         SpawnTimer st = SpawnTimer.getInstance();
-        AIControls aiControls =  AIControls.getInstance();
+        AIControls aiControls = AIControls.getInstance();
         Info info = Info.getInstance();
         info.setOwnerStage(stage);
 
@@ -90,9 +97,9 @@ public class Habitat extends Application {
                 SpawnControls.getInstance().getStopBtn().setDisable(false);
                 Info.getInstance().getInfoBtn().setDisable(false);
 
-                try(FileReader reader = new FileReader(file)) {
+                try (FileReader reader = new FileReader(file)) {
                     StringBuilder antsText = new StringBuilder();
-                    for (int c; (c = reader.read()) != -1;) {
+                    for (int c; (c = reader.read()) != -1; ) {
                         antsText.append((char) c);
                     }
                     String[] antsArray = antsText.toString().split("\n");
@@ -105,8 +112,7 @@ public class Habitat extends Application {
                                         Double.parseDouble(AntStringProperties[2]),
                                         Double.parseDouble(AntStringProperties[3]),
                                         st, Integer.parseInt(AntStringProperties[0]));
-                            }
-                            else {
+                            } else {
                                 ant = new WarriorAnt(
                                         Double.parseDouble(AntStringProperties[2]),
                                         Double.parseDouble(AntStringProperties[3]),
@@ -119,30 +125,30 @@ public class Habitat extends Application {
                             antRoot.getChildren().add(ant.getVisualObject());
                         }
                     });
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     System.out.println(ex.getMessage());
                 }
+                startSpawn();
                 SpawnTimer.getInstance().start();
+            } else {
+                if (SpawnControls.getInstance().getStartBtn().isDisabled()) {
+                    startSpawn();
+                    SpawnTimer.getInstance().continueTimer();
+                }
             }
-            else {
-                SpawnTimer.getInstance().continueTimer();
-            }
-            startSpawn();
         });
 
         LoadSave.getInstance().getSaveBtn().setOnAction(e -> {
             stopSpawn();
             File file = LoadSave.getInstance().getFileChooser().showSaveDialog(stage);
             if (file != null) {
-                try(FileWriter writer = new FileWriter(file)) {
+                try (FileWriter writer = new FileWriter(file)) {
                     for (AbstractAnt ant : AntCollection.ants().antVector()) {
                         writer.write(ant.getId() + " " + (ant.getBornMoment() - st.getTime()) + " " + ant.getVisualObject().getCenterX()
                                 + " " + ant.getVisualObject().getCenterY() + "\n");
                     }
-                }
-                catch(Exception ex) {
-                    System.out.println(ex.getMessage());
+                } catch (Exception ex) {
+                    System.err.println(ex.getMessage());
                 }
 
             }
@@ -190,6 +196,45 @@ public class Habitat extends Application {
                             } else {
                                 Console.getInstance().getConsoleTextArea().appendText("Муравьи уже не спавнятся\n");
                             }
+                        } else if (command.startsWith("give") &
+                                command.split(" ").length == 3) {
+                            if (command.split(" ")[1].chars().allMatch(Character::isDigit) &
+                                    command.split(" ")[2].chars().allMatch(Character::isDigit)) {
+                                try {
+                                    int countOfGivenAnts = Integer.parseInt(command.split(" ")[1]);
+                                    int IDOfClient = Integer.parseInt(command.split(" ")[2]);
+
+                                    if (AntCollection.ants().antVector().size() >= countOfGivenAnts &
+                                            countOfGivenAnts > 0) {
+                                        ArrayList<Integer[]> givenAnts = new ArrayList<>(countOfGivenAnts);
+                                        for (int i = 0; i < countOfGivenAnts; i++) {
+                                            AbstractAnt givenAnt = AntCollection.ants().antVector().elementAt(
+                                                    new Random().nextInt(AntCollection.ants().antVector().size()));
+
+                                            givenAnts.add(new Integer[]{(int) givenAnt.getVisualObject().getCenterX(),
+                                                    (int) givenAnt.getVisualObject().getCenterY(),
+                                                    givenAnt.getId(), givenAnt.getBornMoment() - st.getTime()});
+
+                                            AntCollection.ants().antVector().remove(givenAnt);
+                                            AntCollection.ants().antSet().remove(givenAnt.getId());
+                                            AntCollection.ants().antMap().remove(givenAnt.getId());
+                                            antRoot.getChildren().remove(givenAnt.getVisualObject());
+                                        }
+
+                                        Message message = new Message(IDOfClient, givenAnts);
+                                        AntClient.getInstance().getOut().writeObject(message);
+                                        AntClient.getInstance().getOut().flush();
+
+                                    } else if (AntCollection.ants().antVector().size() <= countOfGivenAnts &
+                                            countOfGivenAnts == 0)
+                                        Console.getInstance().getConsoleTextArea().appendText("Т\n");
+                                    else {
+                                        Console.getInstance().getConsoleTextArea().appendText("Не хватает муравьев\n");
+                                    }
+                                } catch (Exception ex) {
+                                    System.err.println("Ошибка: " + ex.getMessage());
+                                }
+                            }
                         } else {
                             if (!(Console.getInstance().getConsoleTextArea().getText().charAt(
                                     Console.getInstance().getConsoleTextArea().getText().length() - 2) == '\n')) {
@@ -202,10 +247,49 @@ public class Habitat extends Application {
 
             consoleThread.setDaemon(true);
             consoleThread.start();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             Console.getInstance().getConsoleTextArea().appendText("Ошибка: " + ex.getMessage() + "\n");
         }
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Object tmp = AntClient.getInstance().getIn().readObject();
+                    if (tmp != null & tmp instanceof Message) {
+                        Platform.runLater(() -> {
+                            Message message = (Message) tmp;
+                            for (Integer[] aboutAnt : message.getAboutAnts()) {
+                                AbstractAnt givenAnt;
+                                if (aboutAnt[2] / 10000 == 1)
+                                    givenAnt = new WorkerAnt(aboutAnt[0], aboutAnt[1], st, aboutAnt[2]);
+                                else
+                                    givenAnt = new WarriorAnt(aboutAnt[0], aboutAnt[1], st, aboutAnt[2]);
+                                givenAnt.setBornMoment(st.getTime() + aboutAnt[3]);
+
+                                AntCollection.ants().antVector().add(givenAnt);
+                                AntCollection.ants().antSet().add(givenAnt.getId());
+                                AntCollection.ants().antMap().put(givenAnt.getId(), givenAnt.getBornMoment());
+                                antRoot.getChildren().add(givenAnt.getVisualObject());
+                            }
+                        });
+                    }
+                    if (tmp != null & tmp instanceof Integer) {
+                        Platform.runLater(() -> {
+                            int newID = (int)tmp;
+                            if (!AntClient.getInstance().getIdSet().contains(newID)) {
+                                AntClient.getInstance().getIdSet().add(newID);
+                            } else {
+                                AntClient.getInstance().getIdSet().remove(newID);
+                            }
+                            AntClient.getInstance().getListID().setItems(
+                                    FXCollections.observableArrayList(AntClient.getInstance().getIdSet()));
+                        });
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Ошибка: " + ex.getMessage());
+                }
+            }
+        }).start();
 
         aiControls.getWarComboBox().setOnAction(e -> {
             warAI.setPriority(aiControls.getWarComboBox().getValue());
@@ -270,7 +354,7 @@ public class Habitat extends Application {
         st.getTimerButton().setOnAction(event -> st.setTimerVisible());
 
         scene.setOnKeyPressed(event -> {
-            switch(event.getCode()) {
+            switch (event.getCode()) {
                 case B -> {
                     if (!spawnControls.getStartBtn().isDisabled()) {
                         startSpawn();
@@ -297,7 +381,8 @@ public class Habitat extends Application {
                     }
                 }
                 case T -> st.setTimerVisible();
-                default -> {}
+                default -> {
+                }
             }
         });
 
@@ -337,16 +422,18 @@ public class Habitat extends Application {
                 info.getInfoBtn(),
                 copyRight,
                 aiControls.getWarAIBox(), aiControls.getWorkAIBox(),
-                aiControls.getWarR(),aiControls.getWarV(),aiControls.getWorkV(),
+                aiControls.getWarR(), aiControls.getWarV(), aiControls.getWorkV(),
                 aiControls.getWarRText(), aiControls.getWarVText(), aiControls.getWorkVText(),
                 aiControls.getWarComboBox(), aiControls.getWorkComboBox(),
                 Console.getInstance().getConsoleButton(),
-                LoadSave.getInstance().getLoadBtn(), LoadSave.getInstance().getSaveBtn());
+                LoadSave.getInstance().getLoadBtn(), LoadSave.getInstance().getSaveBtn(),
+                AntClient.getInstance().getViewIDSetButton(), AntClient.getInstance().getListID(),
+                AntClient.getInstance().getYourIdText());
 
         try (FileReader configReader = new FileReader("config.txt")) {
             StringBuilder configText = new StringBuilder();
-            for (int c;(c = configReader.read()) != -1;) {
-                configText.append((char)c);
+            for (int c; (c = configReader.read()) != -1; ) {
+                configText.append((char) c);
             }
             String[] configVars = configText.toString().split("\n");
 
@@ -383,8 +470,7 @@ public class Habitat extends Application {
             aiControls.getWarComboBox().setValue(Integer.parseInt(configVars[13]));
             workAI.setPriority(Integer.parseInt(configVars[14]));
             aiControls.getWorkComboBox().setValue(Integer.parseInt(configVars[14]));
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             System.out.println("Ошибка при чтении файла: " + ex.getMessage());
         }
 
@@ -417,10 +503,10 @@ public class Habitat extends Application {
         });
 
         menu.getP1().setOnAction(e ->
-            P1 = Integer.parseInt(menu.getP1().getValue().substring(0, menu.getP1().getValue().length() - 1)));
+                P1 = Integer.parseInt(menu.getP1().getValue().substring(0, menu.getP1().getValue().length() - 1)));
 
         menu.getP2().setOnAction(e ->
-            P2 = Integer.parseInt(menu.getP2().getValue().substring(0, menu.getP2().getValue().length() - 1)));
+                P2 = Integer.parseInt(menu.getP2().getValue().substring(0, menu.getP2().getValue().length() - 1)));
 
         menu.getDalee().setOnAction(e -> stage.setScene(scene));
 
@@ -446,8 +532,9 @@ public class Habitat extends Application {
                 configWrite.write(WorkerAnt.getV() + "\n");
                 configWrite.write(warAI.getPriority() + "\n");
                 configWrite.write(workAI.getPriority() + "");
-            }
-            catch(Exception ex) {
+
+                //AntClient.getInstance().closeConnection();
+            } catch (Exception ex) {
                 System.out.println("Ошибка при записи в файл: " + ex.getMessage());
             }
             System.exit(0);
@@ -515,7 +602,7 @@ public class Habitat extends Application {
                     antRoot.getChildren().add(newAnt.getVisualObject());
                 }
             });
-        }, N1, N2, TimeUnit.SECONDS);
+        }, N2, N2, TimeUnit.SECONDS);
     }
 
     private int getUniqueID(Professions prof) {
